@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flourish Dice Roll - AR Game Master</title>
+    <title>Flourish Dice Controller</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
@@ -36,12 +36,13 @@
         }
 
         .logo-image {
-            max-width: 500px;
-            width: 90%;
+            max-width: 450px;
+            width: 85%;
             height: auto;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
         }
 
+        /* 3D Dice Styling */
         .scene {
             width: var(--dice-size);
             height: var(--dice-size);
@@ -50,7 +51,6 @@
             cursor: pointer;
             transition: transform 0.2s ease;
         }
-
         .scene:hover { transform: scale(1.1); }
         .scene:active { transform: scale(0.95); }
 
@@ -93,7 +93,6 @@
         .face-5 { transform: rotateX(90deg) translateZ(50px); }
         .face-6 { transform: rotateX(-90deg) translateZ(50px); }
 
-        /* Pip Positions */
         .face-1 .pip { grid-area: d; }
         .face-2 .pip:nth-child(1) { grid-area: a; } .face-2 .pip:nth-child(2) { grid-area: g; }
         .face-3 .pip:nth-child(1) { grid-area: a; } .face-3 .pip:nth-child(2) { grid-area: d; } .face-3 .pip:nth-child(3) { grid-area: g; }
@@ -101,23 +100,43 @@
         .face-5 .pip:nth-child(1) { grid-area: a; } .face-5 .pip:nth-child(2) { grid-area: b; } .face-5 .pip:nth-child(3) { grid-area: d; } .face-5 .pip:nth-child(4) { grid-area: f; } .face-5 .pip:nth-child(5) { grid-area: g; }
         .face-6 .pip:nth-child(1) { grid-area: a; } .face-6 .pip:nth-child(2) { grid-area: b; } .face-6 .pip:nth-child(3) { grid-area: c; } .face-6 .pip:nth-child(4) { grid-area: e; } .face-6 .pip:nth-child(5) { grid-area: f; } .face-6 .pip:nth-child(6) { grid-area: g; }
 
-        #status-container { text-align: center; margin-top: 1.5rem; }
+        /* UI Styling */
+        #status-container { text-align: center; }
         #message-box { font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        #position-box { font-size: 1.1rem; opacity: 0.9; margin-top: 0.5rem; background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; display: inline-block; }
         
+        .pos-display {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 20px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .adjust-btn {
+            background: rgba(255, 255, 255, 0.2);
+            width: 35px; height: 35px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 1.2rem;
+            cursor: pointer; transition: 0.2s;
+        }
+        .adjust-btn:active { background: var(--flourish-green); color: black; }
+
         .reset-btn {
-            margin-top: 2rem;
+            margin-top: 25px;
             padding: 10px 25px;
             background-color: var(--flourish-pink);
             color: white;
             border-radius: 99px;
             font-weight: bold;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             border: none;
             cursor: pointer;
             box-shadow: 0 4px 0 #b33a80;
-            transition: all 0.1s;
         }
         .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b33a80; }
     </style>
@@ -125,7 +144,7 @@
 <body class="p-4">
 
     <div class="logo-container">
-        <img src="https://raw.githubusercontent.com/calebkatz874-bot/images/main/FLOURISH.png" alt="Flourish Roll Dice" class="logo-image">
+        <img src="https://raw.githubusercontent.com/calebkatz874-bot/images/main/FLOURISH.png" alt="Flourish Dice" class="logo-image">
     </div>
 
     <div class="scene" id="dice-scene">
@@ -139,10 +158,15 @@
         </div>
     </div>
 
-    <div id="status-container">
-        <div id="message-box" class="text-2xl">Tap the dice!</div>
-        <div id="position-box">Current Spot: 0</div>
-        <br>
+    <div id="status-container" class="flex flex-col items-center">
+        <div id="message-box" class="text-2xl mb-2">Tap dice to roll!</div>
+        
+        <div class="pos-display">
+            <div class="adjust-btn" onclick="manualAdjust(-1)">−</div>
+            <div id="position-text">Spot: 0</div>
+            <div class="adjust-btn" onclick="manualAdjust(1)">+</div>
+        </div>
+
         <button class="reset-btn" onclick="resetGame()">Reset Board</button>
     </div>
 
@@ -150,27 +174,37 @@
         const dice = document.getElementById('dice');
         const diceScene = document.getElementById('dice-scene');
         const msgBox = document.getElementById('message-box');
-        const posBox = document.getElementById('position-box');
+        const posText = document.getElementById('position-text');
 
         let currentX = 0;
         let currentY = 0;
         let isRolling = false;
-        
-        // --- PERSISTENCE LOGIC ---
-        const MAX_SPOTS = 20; 
+        const MAX_SPOTS = 20;
 
-        function getStoredPosition() {
-            const saved = localStorage.getItem('flourish_current_position');
+        // --- LOAD POSITION ---
+        function getStoredPos() {
+            const saved = localStorage.getItem('flourish_current_pos');
             return saved ? parseInt(saved, 10) : 0;
         }
 
-        let playerPosition = getStoredPosition();
-        posBox.textContent = `Current Spot: ${playerPosition}`;
+        let playerPosition = getStoredPos();
+        posText.textContent = `Spot: ${playerPosition}`;
 
-        // --- HOVERLAY BRIDGE ---
-        function sendHoverlayEvent(message) {
-            console.log("Hoverlay Event: " + message);
+        // --- HOVERLAY HANDSHAKE ---
+        function sendHoverlay(message) {
+            console.log("Sending to Hoverlay: " + message);
             window.location.href = `space://do?action=send_event&event_message=${message}`;
+        }
+
+        // --- MANUAL OVERRIDE ---
+        function manualAdjust(amount) {
+            playerPosition += amount;
+            if (playerPosition < 0) playerPosition = 0;
+            if (playerPosition > MAX_SPOTS) playerPosition = MAX_SPOTS;
+            
+            localStorage.setItem('flourish_current_pos', playerPosition);
+            posText.textContent = `Spot: ${playerPosition}`;
+            sendHoverlay(`spot-${playerPosition}`);
         }
 
         const faceRotations = {
@@ -181,16 +215,16 @@
         function rollDice() {
             if (isRolling) return;
             
-            // Re-sync just in case
-            playerPosition = getStoredPosition();
-            
+            // Re-sync with storage
+            playerPosition = getStoredPos();
             isRolling = true;
-            const result = Math.floor(Math.random() * 6) + 1;
             
-            // Calculate and Save immediately
+            const result = Math.floor(Math.random() * 6) + 1;
             playerPosition += result;
-            if (playerPosition > MAX_SPOTS) playerPosition = MAX_SPOTS; 
-            localStorage.setItem('flourish_current_position', playerPosition);
+            if (playerPosition > MAX_SPOTS) playerPosition = MAX_SPOTS;
+            
+            // Save immediately
+            localStorage.setItem('flourish_current_pos', playerPosition);
 
             msgBox.textContent = "Rolling...";
             const spinsX = (Math.floor(Math.random() * 4) + 5) * 360;
@@ -202,24 +236,27 @@
 
             setTimeout(() => {
                 msgBox.textContent = `You rolled a ${result}!`;
-                posBox.textContent = `Current Spot: ${playerPosition}`;
+                posText.textContent = `Spot: ${playerPosition}`;
                 isRolling = false;
 
-                // Send signals to Hoverlay
-                sendHoverlayEvent(`dice-${result}`);
+                // 1. Notify Hoverlay of the result (Sound Trigger)
+                sendHoverlay(`dice-${result}`);
+
+                // 2. Notify Hoverlay of the landing spot (Visual/Animation Trigger)
                 setTimeout(() => {
-                    sendHoverlayEvent(`spot-${playerPosition}`);
+                    sendHoverlay(`spot-${playerPosition}`);
                 }, 600);
+                
             }, 1800);
         }
 
         function resetGame() {
-            if (confirm("Are you sure you want to reset your position to Spot 0?")) {
-                localStorage.setItem('flourish_current_position', 0);
+            if (confirm("Reset game to Start?")) {
+                localStorage.setItem('flourish_current_pos', 0);
                 playerPosition = 0;
-                posBox.textContent = `Current Spot: 0`;
+                posText.textContent = `Spot: 0`;
                 msgBox.textContent = "Board Reset!";
-                sendHoverlayEvent('game-reset');
+                sendHoverlay('game-reset');
             }
         }
 
