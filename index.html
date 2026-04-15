@@ -18,9 +18,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start; 
             min-height: 100vh;
             margin: 0;
+            padding-top: 20px; 
             font-family: 'Arial Rounded MT Bold', 'Helvetica Rounded', Arial, sans-serif;
             color: white;
             overflow: hidden;
@@ -28,24 +29,31 @@
 
         .logo-container {
             text-align: center;
-            margin-bottom: 1rem;
+            margin-bottom: 10px;
             display: flex;
             justify-content: center;
             width: 100%;
         }
 
         .logo-image {
-            max-width: 500px;
-            width: 90%;
+            max-width: 400px;
+            width: 80%;
             height: auto;
             filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+        }
+
+        #main-control-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 0;
         }
 
         .scene {
             width: var(--dice-size);
             height: var(--dice-size);
             perspective: 600px;
-            margin: 40px;
+            margin: 20px;
             cursor: pointer;
         }
 
@@ -94,30 +102,27 @@
         .face-5 .pip:nth-child(1) { grid-area: a; } .face-5 .pip:nth-child(2) { grid-area: b; } .face-5 .pip:nth-child(3) { grid-area: d; } .face-5 .pip:nth-child(4) { grid-area: f; } .face-5 .pip:nth-child(5) { grid-area: g; }
         .face-6 .pip:nth-child(1) { grid-area: a; } .face-6 .pip:nth-child(2) { grid-area: b; } .face-6 .pip:nth-child(3) { grid-area: c; } .face-6 .pip:nth-child(4) { grid-area: e; } .face-6 .pip:nth-child(5) { grid-area: f; } .face-6 .pip:nth-child(6) { grid-area: g; }
 
-        #status-container { text-align: center; margin-top: 1rem; }
-        #message-box { font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
-        
         .pos-display {
             background: rgba(255, 255, 255, 0.15);
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 15px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-top: 10px;
+            gap: 12px;
+            margin-top: 5px;
         }
 
         .adjust-btn {
             background: rgba(255, 255, 255, 0.2);
-            width: 35px; height: 35px;
+            width: 30px; height: 30px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-weight: bold; cursor: pointer;
         }
 
         .reset-btn {
-            margin-top: 25px;
-            padding: 10px 25px;
+            margin-top: 15px;
+            padding: 8px 20px;
             background-color: var(--flourish-pink);
             color: white;
             border-radius: 99px;
@@ -125,6 +130,7 @@
             text-transform: uppercase;
             border: none;
             box-shadow: 0 4px 0 #b33a80;
+            font-size: 0.8rem;
         }
         .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b33a80; }
     </style>
@@ -135,23 +141,23 @@
         <img src="https://raw.githubusercontent.com/calebkatz874-bot/images/main/FLOURISH.png" alt="Flourish" class="logo-image">
     </div>
 
-    <div class="scene" id="dice-scene">
-        <div id="dice" class="cube">
-            <div class="cube__face face-1"><span class="pip"></span></div>
-            <div class="cube__face face-2"><span class="pip"></span><span class="pip"></span></div>
-            <div class="cube__face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-            <div class="cube__face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-            <div class="cube__face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-            <div class="cube__face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+    <div id="main-control-area">
+        <div class="scene" id="dice-scene">
+            <div id="dice" class="cube">
+                <div class="cube__face face-1"><span class="pip"></span></div>
+                <div class="cube__face face-2"><span class="pip"></span><span class="pip"></span></div>
+                <div class="cube__face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+                <div class="cube__face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+                <div class="cube__face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+                <div class="cube__face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+            </div>
         </div>
-    </div>
 
-    <div id="status-container" class="flex flex-col items-center">
-        <div id="message-box" class="text-2xl">Tap to roll!</div>
+        <div id="message-box" class="text-xl font-bold">Tap to roll!</div>
         
         <div class="pos-display">
             <div class="adjust-btn" onclick="manualAdjust(-1)">−</div>
-            <div id="position-text" class="text-xl font-bold">Spot: 0</div>
+            <div id="position-text" class="text-lg font-bold">Spot: 0</div>
             <div class="adjust-btn" onclick="manualAdjust(1)">+</div>
         </div>
 
@@ -160,7 +166,6 @@
 
     <script>
         const dice = document.getElementById('dice');
-        const diceScene = document.getElementById('dice-scene');
         const msgBox = document.getElementById('message-box');
         const posText = document.getElementById('position-text');
 
@@ -211,12 +216,11 @@
                 playerPosition = 0;
                 localStorage.setItem('flourish_pos', 0);
                 posText.textContent = `Spot: 0`;
-                msgBox.textContent = "Board Reset!";
                 sendHoverlay('game-reset');
             }
         }
 
-        diceScene.addEventListener('click', rollDice);
+        document.getElementById('dice-scene').addEventListener('click', rollDice);
     </script>
 </body>
 </html>
