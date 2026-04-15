@@ -14,7 +14,6 @@
             --bg-dark: #05472A;
         }
 
-        /* Prevent scrolling and fill the split-screen area */
         html, body {
             height: 100%;
             margin: 0;
@@ -25,12 +24,12 @@
             color: white;
         }
 
-        /* This wrapper ensures everything is centered in the available space */
+    
         .main-container {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-evenly; /* Evenly spaces items in the half-screen */
+            justify-content: space-evenly;
             height: 100%;
             padding: 10px;
             box-sizing: border-box;
@@ -80,7 +79,7 @@
             text-align: center;
         }
 
-        /* 3D Dice Scaling */
+    
         .scene { 
             width: var(--dice-size); 
             height: var(--dice-size); 
@@ -109,7 +108,7 @@
             justify-self: center; align-self: center; 
         }
 
-        /* Z-Translate must be exactly half of dice-size */
+     
         .face-1 { transform: rotateY(0deg) translateZ(42.5px); }
         .face-2 { transform: rotateY(90deg) translateZ(42.5px); }
         .face-3 { transform: rotateY(180deg) translateZ(42.5px); }
