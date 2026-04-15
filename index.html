@@ -2,85 +2,137 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Flourish Dice Controller</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --dice-size: 100px;
-            --pip-size: 18px;
+            --dice-size: 80px; /* Slightly smaller for better mobile fit */
+            --pip-size: 14px;
             --flourish-green: #C1FF72;
             --flourish-pink: #FF66C4;
+            --bg-dark: #05472A;
         }
 
         body {
-            background: #05472A;
+            background-color: var(--bg-dark);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
+            justify-content: flex-start; /* Align to top to prevent floating in the middle */
+            height: 100vh;
             margin: 0;
+            padding: 20px 10px;
             font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
             color: white;
+            box-sizing: border-box;
             overflow: hidden;
         }
 
-        .logo-image { max-width: 450px; width: 85%; height: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .logo-image { 
+            max-width: 280px; 
+            width: 70%; 
+            height: auto; 
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); 
+        }
 
-        /* UI Styling */
-        #status-container { text-align: center; z-index: 10; }
-        
-        /* Reset Button Styling - Positioned Top */
+        /* Container to keep UI tight */
+        #ui-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            gap: 10px;
+        }
+
         .reset-btn {
-            margin-bottom: 20px;
-            padding: 8px 20px;
+            padding: 8px 24px;
             background-color: var(--flourish-pink);
             color: white;
             border-radius: 99px;
             font-weight: bold;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             text-transform: uppercase;
             border: none;
-            cursor: pointer;
             box-shadow: 0 4px 0 #b33a80;
-            transition: all 0.1s;
+            cursor: pointer;
         }
         .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b33a80; }
 
         .pos-display {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 8px 15px;
-            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 20px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
+            gap: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .adjust-btn {
             background: rgba(255, 255, 255, 0.2);
-            width: 30px; height: 30px;
+            width: 32px; height: 32px;
             border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
             cursor: pointer;
         }
 
-        /* 3D Dice Styling */
-        .scene { width: var(--dice-size); height: var(--dice-size); perspective: 600px; cursor: pointer; }
-        .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 1.8s cubic-bezier(0.2, 0.8, 0.3, 1); }
-        .cube__face { position: absolute; width: var(--dice-size); height: var(--dice-size); background: white; border: 2px solid #e2e8f0; border-radius: 16px; display: grid; grid-template-areas: "a . b" "c d e" "f . g"; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 12px; backface-visibility: hidden; }
-        .pip { display: block; width: var(--pip-size); height: var(--pip-size); border-radius: 50%; background-color: #1e293b; box-shadow: inset 0 3px 3px rgba(0,0,0,0.4); justify-self: center; align-self: center; }
+        #message-box {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--flourish-green);
+            min-height: 1.5em;
+            text-align: center;
+        }
 
-        /* Face Rotations */
-        .face-1 { transform: rotateY(0deg) translateZ(50px); }
-        .face-2 { transform: rotateY(90deg) translateZ(50px); }
-        .face-3 { transform: rotateY(180deg) translateZ(50px); }
-        .face-4 { transform: rotateY(-90deg) translateZ(50px); }
-        .face-5 { transform: rotateX(90deg) translateZ(50px); }
-        .face-6 { transform: rotateX(-90deg) translateZ(50px); }
+        /* Fixed Dice Scene Size */
+        .scene { 
+            width: var(--dice-size); 
+            height: var(--dice-size); 
+            perspective: 600px; 
+            margin: 20px 0; 
+        }
+        
+        .cube { 
+            width: 100%; 
+            height: 100%; 
+            position: relative; 
+            transform-style: preserve-3d; 
+            transition: transform 1.8s cubic-bezier(0.2, 0.8, 0.3, 1); 
+        }
 
-        /* Pip Mapping */
+        .cube__face { 
+            position: absolute; 
+            width: var(--dice-size); 
+            height: var(--dice-size); 
+            background: white; 
+            border: 2px solid #ddd; 
+            border-radius: 12px; 
+            display: grid; 
+            grid-template-areas: "a . b" "c d e" "f . g"; 
+            grid-template-columns: repeat(3, 1fr); 
+            grid-template-rows: repeat(3, 1fr); 
+            padding: 8px; 
+            backface-visibility: hidden; 
+        }
+
+        .pip { 
+            display: block; width: var(--pip-size); height: var(--pip-size); 
+            border-radius: 50%; background-color: #111; 
+            justify-self: center; align-self: center; 
+        }
+
+        /* Face Rotations (Standard) */
+        .face-1 { transform: rotateY(0deg) translateZ(40px); }
+        .face-2 { transform: rotateY(90deg) translateZ(40px); }
+        .face-3 { transform: rotateY(180deg) translateZ(40px); }
+        .face-4 { transform: rotateY(-90deg) translateZ(40px); }
+        .face-5 { transform: rotateX(90deg) translateZ(40px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(40px); }
+
+        /* Pip Grids */
         .face-1 .pip { grid-area: d; }
         .face-2 .pip:nth-child(1) { grid-area: a; } .face-2 .pip:nth-child(2) { grid-area: g; }
         .face-3 .pip:nth-child(1) { grid-area: a; } .face-3 .pip:nth-child(2) { grid-area: d; } .face-3 .pip:nth-child(3) { grid-area: g; }
@@ -91,18 +143,18 @@
 </head>
 <body>
 
-    <img src="https://raw.githubusercontent.com/calebkatz874-bot/images/main/FLOURISH.png" alt="Flourish Dice" class="logo-image mb-6">
+    <img src="https://raw.githubusercontent.com/calebkatz874-bot/images/main/FLOURISH.png" alt="Flourish" class="logo-image">
 
-    <div id="status-container" class="flex flex-col items-center">
+    <div id="ui-wrapper">
         <button class="reset-btn" onclick="resetGame()">Reset Board</button>
-        
+
         <div class="pos-display">
             <div class="adjust-btn" onclick="manualAdjust(-1)">−</div>
-            <div id="position-text" class="font-bold">Spot: 0</div>
+            <div id="position-text" class="font-bold text-lg">Spot: 0</div>
             <div class="adjust-btn" onclick="manualAdjust(1)">+</div>
         </div>
 
-        <div id="message-box" class="text-xl font-bold mb-6">Tap to roll!</div>
+        <div id="message-box">Tap to roll!</div>
     </div>
 
     <div class="scene" id="dice-scene">
