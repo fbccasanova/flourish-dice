@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flourish 2-Player Controller & Quiz</title>
+    <title>Flourish 2-Player Controller</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root {
-            --dice-size: 100px;
-            --pip-size: 18px;
+            --dice-size: 90px;
+            --pip-size: 16px;
             --flourish-green: #C1FF72;
             --flourish-pink: #FF66C4;
             --navy: #1a2a6c;
@@ -22,88 +22,88 @@
             justify-content: flex-start; 
             min-height: 100vh;
             margin: 0;
-            padding-top: 15px;
+            padding-top: 10px;
             font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
             color: white;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .logo-image { max-width: 320px; width: 75%; height: auto; margin-bottom: 5px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .logo-image { max-width: 280px; width: 70%; height: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
 
-        /* --- UI VIEWS --- */
-        #dice-view, #quiz-view {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-        }
-
+        #dice-view, #quiz-view { display: flex; flex-direction: column; align-items: center; width: 100%; }
         .hidden { display: none !important; }
 
-        /* --- DICE STYLES --- */
+        /* DICE BUTTONS */
         .switch-player-btn {
             background: var(--flourish-green);
             color: #05472A;
-            padding: 10px 30px;
+            padding: 8px 24px;
             border-radius: 99px;
             font-weight: 800;
             text-transform: uppercase;
-            font-size: 1rem;
+            font-size: 0.9rem;
             box-shadow: 0 4px 0 #89b351;
-            margin-bottom: 10px;
+            margin: 10px 0;
         }
 
-        .scene { width: var(--dice-size); height: var(--dice-size); perspective: 600px; margin: 15px; cursor: pointer; }
-        .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 1.8s cubic-bezier(0.2, 0.8, 0.3, 1); }
-        .cube__face { position: absolute; width: var(--dice-size); height: var(--dice-size); background: white; border: 2px solid #e2e8f0; border-radius: 16px; display: grid; grid-template-areas: "a . b" "c d e" "f . g"; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); padding: 12px; backface-visibility: hidden; }
-        .pip { display: block; width: var(--pip-size); height: var(--pip-size); border-radius: 50%; background-color: #1e293b; justify-self: center; align-self: center; }
+        /* 3D DICE ENGINE FIX */
+        .scene {
+            width: var(--dice-size);
+            height: var(--dice-size);
+            perspective: 1000px; /* Increased for better depth */
+            margin: 25px 0;
+        }
         
-        /* Standard Face Rotations */
-        .face-1 { transform: rotateY(0deg) translateZ(50px); }
-        .face-2 { transform: rotateY(90deg) translateZ(50px); }
-        .face-3 { transform: rotateY(180deg) translateZ(50px); }
-        .face-4 { transform: rotateY(-90deg) translateZ(50px); }
-        .face-5 { transform: rotateX(90deg) translateZ(50px); }
-        .face-6 { transform: rotateX(-90deg) translateZ(50px); }
-
-        .pos-display { background: rgba(255, 255, 255, 0.15); padding: 8px 20px; border-radius: 15px; display: flex; align-items: center; gap: 15px; }
-        .adjust-btn { background: rgba(255, 255, 255, 0.2); width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-
-        /* --- QUIZ STYLES --- */
-        .quiz-card {
-            background-color: var(--navy);
-            padding: 25px;
-            border-radius: 24px;
-            box-shadow: 8px 8px 0px var(--flourish-green);
-            text-align: center;
-            width: 90%;
-            max-width: 400px;
-            border: 4px solid #4a4a4a;
-            margin-top: 10px;
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1.8s cubic-bezier(0.2, 0.8, 0.3, 1);
         }
 
-        .btn-quiz {
-            background-color: var(--flourish-green);
-            color: var(--navy);
-            padding: 15px 30px;
-            font-weight: 800;
-            border-radius: 12px;
-            min-width: 120px;
-            box-shadow: 0px 4px 0px #4a4a4a;
+        .cube__face {
+            position: absolute;
+            width: var(--dice-size);
+            height: var(--dice-size);
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 14px;
+            display: grid;
+            grid-template-areas: "a . b" "c d e" "f . g";
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 10px;
+            backface-visibility: hidden;
+            box-sizing: border-box;
         }
 
-        .verification {
-            margin-top: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
-            font-size: 12px;
-            color: #e0e0e0;
-        }
+        .pip { display: block; width: var(--pip-size); height: var(--pip-size); border-radius: 50%; background-color: #1e293b; justify-self: center; align-self: center; }
 
-        .reset-btn { margin-top: 15px; padding: 8px 25px; background: var(--flourish-pink); color: white; border-radius: 99px; font-weight: bold; text-transform: uppercase; font-size: 0.7rem; }
+        /* Rotations - Fixed translateZ */
+        .face-1 { transform: rotateY(0deg) translateZ(45px); }
+        .face-2 { transform: rotateY(90deg) translateZ(45px); }
+        .face-3 { transform: rotateY(180deg) translateZ(45px); }
+        .face-4 { transform: rotateY(-90deg) translateZ(45px); }
+        .face-5 { transform: rotateX(90deg) translateZ(45px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(45px); }
+
+        .face-1 .pip { grid-area: d; }
+        .face-2 .pip:nth-child(1) { grid-area: a; } .face-2 .pip:nth-child(2) { grid-area: g; }
+        .face-3 .pip:nth-child(1) { grid-area: a; } .face-3 .pip:nth-child(2) { grid-area: d; } .face-3 .pip:nth-child(3) { grid-area: g; }
+        .face-4 .pip:nth-child(1) { grid-area: a; } .face-4 .pip:nth-child(2) { grid-area: b; } .face-4 .pip:nth-child(3) { grid-area: f; } .face-4 .pip:nth-child(4) { grid-area: g; }
+        .face-5 .pip:nth-child(1) { grid-area: a; } .face-5 .pip:nth-child(2) { grid-area: b; } .face-5 .pip:nth-child(3) { grid-area: d; } .face-5 .pip:nth-child(4) { grid-area: f; } .face-5 .pip:nth-child(5) { grid-area: g; }
+        .face-6 .pip:nth-child(1) { grid-area: a; } .face-6 .pip:nth-child(2) { grid-area: b; } .face-6 .pip:nth-child(3) { grid-area: c; } .face-6 .pip:nth-child(4) { grid-area: e; } .face-6 .pip:nth-child(5) { grid-area: f; } .face-6 .pip:nth-child(6) { grid-area: g; }
+
+        .pos-display { background: rgba(255, 255, 255, 0.1); padding: 8px 18px; border-radius: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .adjust-btn { background: rgba(255, 255, 255, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        /* QUIZ STYLES */
+        .quiz-card { background-color: var(--navy); padding: 25px; border-radius: 24px; box-shadow: 6px 6px 0px var(--flourish-green); width: 90%; max-width: 380px; border: 3px solid #4a4a4a; text-align: center; }
+        .btn-quiz { background-color: var(--flourish-green); color: var(--navy); padding: 12px 25px; font-weight: 800; border-radius: 12px; box-shadow: 0px 4px 0px #4a4a4a; }
+        .verification { margin-top: 15px; background: rgba(255, 255, 255, 0.1); padding: 12px; border-radius: 12px; width: 90%; max-width: 380px; font-size: 11px; }
+        .reset-btn { margin-top: 20px; padding: 6px 20px; background: var(--flourish-pink); color: white; border-radius: 99px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -112,7 +112,7 @@
 
     <div id="dice-view">
         <button class="switch-player-btn" onclick="togglePlayer()">Switch Player</button>
-        <div id="message-box" class="text-xl font-bold mb-2">Player 1's Turn</div>
+        <div id="message-box" class="text-lg font-bold mb-2">P1's Turn</div>
 
         <div class="scene" id="dice-scene">
             <div id="dice" class="cube">
@@ -125,7 +125,7 @@
             </div>
         </div>
 
-        <div class="pos-display mb-4">
+        <div class="pos-display">
             <div class="adjust-btn" onclick="manualAdjust(-1)">−</div>
             <div id="position-text" class="text-lg font-bold">Spot: 0</div>
             <div class="adjust-btn" onclick="manualAdjust(1)">+</div>
@@ -135,24 +135,21 @@
 
     <div id="quiz-view" class="hidden">
         <div class="quiz-card">
-            <h1 class="text-flourish-green font-bold text-2xl mb-4">QUIZ TIME!</h1>
-            <div id="question-text" class="text-white text-lg mb-6 leading-tight">Loading...</div>
-            
-            <div class="flex gap-4 justify-center" id="quiz-options">
+            <h1 class="text-flourish-green font-bold text-xl mb-4">QUIZ TIME!</h1>
+            <div id="question-text" class="text-white text-md mb-6 leading-tight">Loading...</div>
+            <div class="flex gap-4 justify-center">
                 <button class="btn-quiz" onclick="handleQuizAnswer(true)">TRUE</button>
                 <button class="btn-quiz" onclick="handleQuizAnswer(false)">FALSE</button>
             </div>
-            <div id="quiz-feedback" class="mt-4 font-bold text-xl uppercase"></div>
+            <div id="quiz-feedback" class="mt-4 font-bold text-lg uppercase"></div>
         </div>
-
         <div class="verification">
             <h2 class="text-flourish-green font-bold mb-1">Nutritional Science:</h2>
-            <div id="fact-source">Choose an answer!</div>
+            <div id="fact-source">Answer to see facts!</div>
         </div>
     </div>
 
     <script>
-        // --- DATA ---
         let currentPlayer = 1;
         let positions = {
             1: parseInt(localStorage.getItem('flourish_p1_pos')) || 0,
@@ -170,7 +167,6 @@
 
         let activeQuestion = null;
 
-        // --- CORE FUNCTIONS ---
         function updateUI() {
             document.getElementById('position-text').textContent = `Spot: ${positions[currentPlayer]}`;
             document.getElementById('message-box').textContent = `Player ${currentPlayer}'s Turn`;
@@ -201,9 +197,10 @@
             if (isRolling) return;
             isRolling = true;
             const result = Math.floor(Math.random() * 6) + 1;
-            positions[currentPlayer] = Math.min(MAX_SPOTS, positions[currentPlayer] + result);
-            localStorage.setItem(`flourish_p${currentPlayer}_pos`, positions[currentPlayer]);
-
+            
+            // Temporary landing calc
+            let tempPos = Math.min(MAX_SPOTS, positions[currentPlayer] + result);
+            
             const spinsX = (Math.floor(Math.random() * 4) + 5) * 360;
             const spinsY = (Math.floor(Math.random() * 4) + 5) * 360;
             currentX += spinsX + faceRotations[result].x - (currentX % 360);
@@ -212,11 +209,11 @@
 
             setTimeout(() => {
                 document.getElementById('message-box').textContent = `P${currentPlayer} rolled a ${result}!`;
-                document.getElementById('position-text').textContent = `Spot: ${positions[currentPlayer]}`;
+                positions[currentPlayer] = tempPos;
+                localStorage.setItem(`flourish_p${currentPlayer}_pos`, positions[currentPlayer]);
+                updateUI();
                 isRolling = false;
                 sendHoverlay(`dice-${result}`);
-
-                // --- CHECK LANDING SPOT ---
                 handleLanding(positions[currentPlayer]);
             }, 1800);
         }
@@ -224,7 +221,7 @@
         function handleLanding(spot) {
             let newPos = spot;
             let eventMsg = "";
-            let isQuiz = false;
+            let isSpecial = true;
 
             if (spot === 1) { newPos = 2; eventMsg = "+1 Bonus!"; }
             else if (spot === 3) { newPos = 7; eventMsg = "🌀 Portal Jump!"; }
@@ -232,12 +229,10 @@
             else if (spot === 12) { newPos = 15; eventMsg = "+3 Bonus!"; }
             else if (spot === 16) { newPos = 14; eventMsg = "Burger Slump! -2"; }
             else if (spot === 19) { newPos = 14; eventMsg = "Fry Trap! -5"; }
-            else if (spot === 10 || spot === 15) { isQuiz = true; }
+            else if (spot === 10 || spot === 15) { setTimeout(showQuiz, 1000); return; }
+            else { isSpecial = false; }
 
-            if (isQuiz) {
-                setTimeout(showQuiz, 1000);
-            } else if (newPos !== spot) {
-                sendHoverlay(`spot-${spot}`);
+            if (isSpecial) {
                 setTimeout(() => {
                     document.getElementById('message-box').textContent = eventMsg;
                     setTimeout(() => {
@@ -245,51 +240,35 @@
                         localStorage.setItem(`flourish_p${currentPlayer}_pos`, newPos);
                         updateUI();
                     }, 4000); 
-                }, 1200);
-            } else {
-                setTimeout(() => sendHoverlay(`spot-${spot}`), 600);
+                }, 1000);
             }
         }
 
-        // --- QUIZ LOGIC ---
         function showQuiz() {
             document.getElementById('dice-view').classList.add('hidden');
             document.getElementById('quiz-view').classList.remove('hidden');
-            document.getElementById('quiz-feedback').textContent = "";
-            document.getElementById('fact-source').textContent = "Choose an answer!";
-            
-            // Randomize Question
             activeQuestion = quizData[Math.floor(Math.random() * quizData.length)];
             document.getElementById('question-text').textContent = activeQuestion.q;
-            
-            const btns = document.querySelectorAll('.btn-quiz');
-            btns.forEach(b => b.disabled = false);
+            document.getElementById('quiz-feedback').textContent = "";
         }
 
         function handleQuizAnswer(userChoice) {
             const feedback = document.getElementById('quiz-feedback');
-            const btns = document.querySelectorAll('.btn-quiz');
-            btns.forEach(b => b.disabled = true);
-
             if (userChoice === activeQuestion.a) {
-                // Correct logic
                 let moveBonus = (positions[currentPlayer] === 10) ? 1 : 2;
                 feedback.textContent = `✓ CORRECT! MOVE +${moveBonus}`;
                 feedback.style.color = "#C1FF72";
-                
                 setTimeout(() => {
                     positions[currentPlayer] += moveBonus;
                     localStorage.setItem(`flourish_p${currentPlayer}_pos`, positions[currentPlayer]);
                     exitQuiz();
                 }, 3000);
             } else {
-                // Wrong logic
-                feedback.textContent = "✗ WRONG! STAY HERE";
+                feedback.textContent = "✗ WRONG!";
                 feedback.style.color = "#FF0503";
                 setTimeout(exitQuiz, 3000);
             }
-
-            document.getElementById('fact-source').innerHTML = `<strong>The Science:</strong> ${activeQuestion.fact}<br><small>Source: ${activeQuestion.source}</small>`;
+            document.getElementById('fact-source').innerHTML = `<strong>Fact:</strong> ${activeQuestion.fact}`;
         }
 
         function exitQuiz() {
@@ -299,13 +278,11 @@
         }
 
         function resetFullGame() {
-            if (confirm("Reset BOTH players?")) {
+            if (confirm("Reset Board?")) {
                 positions[1] = 0; positions[2] = 0;
                 localStorage.setItem('flourish_p1_pos', 0);
                 localStorage.setItem('flourish_p2_pos', 0);
-                currentPlayer = 1;
                 updateUI();
-                sendHoverlay('game-reset');
             }
         }
 
