@@ -1,293 +1,776 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flourish 2-Player Controller</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root {
-            --dice-size: 90px;
-            --pip-size: 16px;
-            --flourish-green: #C1FF72;
-            --flourish-pink: #FF66C4;
-            --navy: #1a2a6c;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Flourish 2-Player Controller</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ... (All your existing CSS remains the same) ... */
+    :root {
+      --dice-size: 100px;
+      --pip-size: 18px;
+      --flourish-green: #C1FF72;
+      --flourish-pink: #FF66C4;
+      --flourish-blue: #00A3FF;
+    }
 
-        body {
-            background: #05472A;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start; 
-            min-height: 100vh;
-            margin: 0;
-            padding-top: 10px;
-            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
-            color: white;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
+    body {
+      background: #05472A;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+      margin: 0;
+      padding-top: 15px;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      color: white;
+      overflow-x: hidden;
+    }
 
-        .logo-image { max-width: 280px; width: 70%; height: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+    .logo-image {
+      max-width: 320px; width: 75%; height: auto;
+      margin-bottom: 5px;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));
+    }
 
-        #dice-view, #quiz-view { display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .hidden { display: none !important; }
+    #main-control-area {
+      display: flex; flex-direction: column;
+      align-items: center; width: 100%;
+    }
 
-        /* DICE BUTTONS */
-        .switch-player-btn {
-            background: var(--flourish-green);
-            color: #05472A;
-            padding: 8px 24px;
-            border-radius: 99px;
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 0 #89b351;
-            margin: 10px 0;
-        }
+    .players-row {
+      display: flex; gap: 12px; margin-bottom: 10px;
+      width: calc(100% - 40px); max-width: 380px;
+    }
+    .player-card {
+      flex: 1; background: rgba(255,255,255,0.1);
+      border: 2px solid transparent; border-radius: 14px;
+      padding: 8px 12px; text-align: center;
+      transition: all .25s ease;
+    }
+    .player-card.active {
+      background: rgba(193,255,114,0.18);
+      border-color: var(--flourish-green);
+    }
+    .player-card-name {
+      font-size: .65rem; text-transform: uppercase;
+      letter-spacing: .1em; opacity: .7; margin-bottom: 2px;
+    }
+    .player-card.active .player-card-name { opacity: 1; color: var(--flourish-green); }
+    .player-card-spot {
+      font-size: 1.9rem; font-weight: 800; line-height: 1;
+    }
+    .player-card.active .player-card-spot { color: var(--flourish-green); }
+    .player-card-label { font-size: .55rem; opacity: .5; letter-spacing: .08em; text-transform: uppercase; }
 
-        /* 3D DICE ENGINE FIX */
-        .scene {
-            width: var(--dice-size);
-            height: var(--dice-size);
-            perspective: 1000px; /* Increased for better depth */
-            margin: 25px 0;
-        }
-        
-        .cube {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 1.8s cubic-bezier(0.2, 0.8, 0.3, 1);
-        }
+    .switch-player-btn {
+      background: var(--flourish-green);
+      color: #05472A;
+      padding: 10px 30px;
+      border-radius: 99px;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 1rem;
+      box-shadow: 0 4px 0 #89b351;
+      margin-bottom: 10px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.1s;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+    }
+    .switch-player-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #89b351; }
+    .switch-player-btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
 
-        .cube__face {
-            position: absolute;
-            width: var(--dice-size);
-            height: var(--dice-size);
-            background: white;
-            border: 2px solid #ddd;
-            border-radius: 14px;
-            display: grid;
-            grid-template-areas: "a . b" "c d e" "f . g";
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(3, 1fr);
-            padding: 10px;
-            backface-visibility: hidden;
-            box-sizing: border-box;
-        }
+    .scene {
+      width: var(--dice-size); height: var(--dice-size);
+      perspective: 600px; margin: 15px; cursor: pointer;
+    }
+    .cube {
+      width: 100%; height: 100%; position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+    .cube.locked { cursor: not-allowed; }
+    .cube__face {
+      position: absolute;
+      width: var(--dice-size); height: var(--dice-size);
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      display: grid;
+      grid-template-areas: "a . b" "c d e" "f . g";
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 12px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .pip {
+      display: block;
+      width: var(--pip-size); height: var(--pip-size);
+      border-radius: 50%;
+      background-color: #1e293b;
+      justify-self: center; align-self: center;
+    }
 
-        .pip { display: block; width: var(--pip-size); height: var(--pip-size); border-radius: 50%; background-color: #1e293b; justify-self: center; align-self: center; }
+    .face-1 { transform: rotateY(0deg)   translateZ(50px); }
+    .face-2 { transform: rotateY(90deg)  translateZ(50px); }
+    .face-3 { transform: rotateY(180deg) translateZ(50px); }
+    .face-4 { transform: rotateY(-90deg) translateZ(50px); }
+    .face-5 { transform: rotateX(90deg)  translateZ(50px); }
+    .face-6 { transform: rotateX(-90deg) translateZ(50px); }
 
-        /* Rotations - Fixed translateZ */
-        .face-1 { transform: rotateY(0deg) translateZ(45px); }
-        .face-2 { transform: rotateY(90deg) translateZ(45px); }
-        .face-3 { transform: rotateY(180deg) translateZ(45px); }
-        .face-4 { transform: rotateY(-90deg) translateZ(45px); }
-        .face-5 { transform: rotateX(90deg) translateZ(45px); }
-        .face-6 { transform: rotateX(-90deg) translateZ(45px); }
+    .face-1 .pip { grid-area: d; }
+    .face-2 .pip:nth-child(1){ grid-area: a; } .face-2 .pip:nth-child(2){ grid-area: g; }
+    .face-3 .pip:nth-child(1){ grid-area: a; } .face-3 .pip:nth-child(2){ grid-area: d; } .face-3 .pip:nth-child(3){ grid-area: g; }
+    .face-4 .pip:nth-child(1){ grid-area: a; } .face-4 .pip:nth-child(2){ grid-area: b; } .face-4 .pip:nth-child(3){ grid-area: f; } .face-4 .pip:nth-child(4){ grid-area: g; }
+    .face-5 .pip:nth-child(1){ grid-area: a; } .face-5 .pip:nth-child(2){ grid-area: b; } .face-5 .pip:nth-child(3){ grid-area: d; } .face-5 .pip:nth-child(4){ grid-area: f; } .face-5 .pip:nth-child(5){ grid-area: g; }
+    .face-6 .pip:nth-child(1){ grid-area: a; } .face-6 .pip:nth-child(2){ grid-area: b; } .face-6 .pip:nth-child(3){ grid-area: c; } .face-6 .pip:nth-child(4){ grid-area: e; } .face-6 .pip:nth-child(5){ grid-area: f; } .face-6 .pip:nth-child(6){ grid-area: g; }
 
-        .face-1 .pip { grid-area: d; }
-        .face-2 .pip:nth-child(1) { grid-area: a; } .face-2 .pip:nth-child(2) { grid-area: g; }
-        .face-3 .pip:nth-child(1) { grid-area: a; } .face-3 .pip:nth-child(2) { grid-area: d; } .face-3 .pip:nth-child(3) { grid-area: g; }
-        .face-4 .pip:nth-child(1) { grid-area: a; } .face-4 .pip:nth-child(2) { grid-area: b; } .face-4 .pip:nth-child(3) { grid-area: f; } .face-4 .pip:nth-child(4) { grid-area: g; }
-        .face-5 .pip:nth-child(1) { grid-area: a; } .face-5 .pip:nth-child(2) { grid-area: b; } .face-5 .pip:nth-child(3) { grid-area: d; } .face-5 .pip:nth-child(4) { grid-area: f; } .face-5 .pip:nth-child(5) { grid-area: g; }
-        .face-6 .pip:nth-child(1) { grid-area: a; } .face-6 .pip:nth-child(2) { grid-area: b; } .face-6 .pip:nth-child(3) { grid-area: c; } .face-6 .pip:nth-child(4) { grid-area: e; } .face-6 .pip:nth-child(5) { grid-area: f; } .face-6 .pip:nth-child(6) { grid-area: g; }
+    #message-box {
+      font-size: 1.1rem; font-weight: 800;
+      margin-bottom: 4px; min-height: 1.6rem;
+      text-align: center;
+      transition: color .2s;
+    }
 
-        .pos-display { background: rgba(255, 255, 255, 0.1); padding: 8px 18px; border-radius: 20px; display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,255,255,0.1); }
-        .adjust-btn { background: rgba(255, 255, 255, 0.2); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .status-badge {
+      font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
+      padding: 4px 14px; border-radius: 99px; margin-bottom: 8px;
+      background: rgba(255,255,255,.1); color: rgba(255,255,255,.6);
+      transition: all .25s;
+    }
+    .status-badge.trap      { background: rgba(255,80,80,.2);  color: #FF8080; }
+    .status-badge.shortcut  { background: rgba(193,255,114,.2); color: var(--flourish-green); }
+    .status-badge.portal    { background: rgba(180,120,255,.2); color: #C89AFF; }
+    .status-badge.challenge { background: rgba(255,102,196,.2); color: var(--flourish-pink); }
+    .status-badge.win       { background: rgba(193,255,114,.25); color: var(--flourish-green); animation: pulse 1s infinite; }
+    .status-badge.fact      { background: rgba(0,163,255,0.2); color: var(--flourish-blue); }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.6} }
 
-        /* QUIZ STYLES */
-        .quiz-card { background-color: var(--navy); padding: 25px; border-radius: 24px; box-shadow: 6px 6px 0px var(--flourish-green); width: 90%; max-width: 380px; border: 3px solid #4a4a4a; text-align: center; }
-        .btn-quiz { background-color: var(--flourish-green); color: var(--navy); padding: 12px 25px; font-weight: 800; border-radius: 12px; box-shadow: 0px 4px 0px #4a4a4a; }
-        .verification { margin-top: 15px; background: rgba(255, 255, 255, 0.1); padding: 12px; border-radius: 12px; width: 90%; max-width: 380px; font-size: 11px; }
-        .reset-btn { margin-top: 20px; padding: 6px 20px; background: var(--flourish-pink); color: white; border-radius: 99px; font-weight: bold; font-size: 0.7rem; text-transform: uppercase; }
-    </style>
+    .pos-display {
+      background: rgba(255,255,255,0.15);
+      padding: 8px 20px; border-radius: 15px;
+      display: flex; align-items: center; gap: 15px;
+    }
+    .adjust-btn {
+      background: rgba(255,255,255,0.2);
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 1.1rem; font-weight: 800;
+      user-select: none; border: none; color: white;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      transition: background .1s;
+    }
+    .adjust-btn:active { background: rgba(255,255,255,.35); }
+
+    .challenge-overlay {
+      display: none; position: fixed; inset: 0; z-index: 95;
+      background: rgba(3, 30, 18, 0.92);
+      flex-direction: column; align-items: center; justify-content: center;
+      padding: 32px; text-align: center; gap: 16px;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+    .challenge-overlay.active { display: flex; }
+
+    .challenge-overlay-emoji {
+      font-size: 3.5rem;
+      animation: bounceIn .5s cubic-bezier(.2,.8,.3,1) both;
+    }
+    .challenge-overlay-title {
+      font-size: 2rem; font-weight: 800;
+      color: var(--flourish-pink);
+      text-transform: uppercase; letter-spacing: .1em; line-height: 1.1;
+      animation: bounceIn .5s .08s cubic-bezier(.2,.8,.3,1) both;
+    }
+    .challenge-overlay-sub {
+      color: rgba(255,255,255,0.7); font-size: .9rem;
+      max-width: 260px; line-height: 1.6;
+      animation: bounceIn .5s .14s cubic-bezier(.2,.8,.3,1) both;
+    }
+    .challenge-overlay-sub strong { color: var(--flourish-green); }
+    @keyframes bounceIn {
+      from { transform: scale(.7) translateY(12px); opacity: 0; }
+      to   { transform: scale(1)  translateY(0);    opacity: 1; }
+    }
+    .challenge-go-btn {
+      background: var(--flourish-pink);
+      color: white; border: none;
+      padding: 18px 48px;
+      border-radius: 99px; font-weight: 800;
+      text-transform: uppercase; font-size: 1.15rem;
+      box-shadow: 0 6px 0 #b33a80;
+      cursor: pointer;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      animation: bounceIn .5s .22s cubic-bezier(.2,.8,.3,1) both;
+      width: 100%; max-width: 320px;
+    }
+    .challenge-go-btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #b33a80; }
+    .challenge-skip-btn {
+      background: none; border: none;
+      color: rgba(255,255,255,.4); font-size: .75rem;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      cursor: pointer; text-decoration: underline;
+      animation: bounceIn .5s .28s cubic-bezier(.2,.8,.3,1) both;
+    }
+    .challenge-skip-btn:active { opacity: .5; }
+
+    .reset-btn {
+      margin-top: 15px; padding: 8px 25px;
+      background: var(--flourish-pink); color: white;
+      border-radius: 99px; font-weight: bold;
+      text-transform: uppercase; border: none;
+      box-shadow: 0 4px 0 #b33a80; font-size: 0.8rem;
+      cursor: pointer;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      margin-bottom: 20px;
+    }
+    .reset-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b33a80; }
+
+    .progress-track {
+      display: flex; gap: 3px; padding: 0 20px;
+      width: calc(100% - 40px); max-width: 380px;
+      margin-bottom: 8px;
+    }
+    .progress-dot {
+      flex: 1; height: 5px; border-radius: 3px;
+      background: rgba(255,255,255,.12); transition: background .35s;
+    }
+    .progress-dot.p1 { background: var(--flourish-green); }
+    .progress-dot.p2 { background: var(--flourish-pink); }
+
+    .event-log {
+      width: calc(100% - 40px); max-width: 380px;
+      background: rgba(0,0,0,.25); border-radius: 12px;
+      padding: 8px 12px; margin-top: 8px;
+      min-height: 58px;
+    }
+    .log-row { font-size: .72rem; color: rgba(255,255,255,.7); padding: 2px 0; display: flex; gap: 7px; align-items: flex-start; }
+    .log-row.old { opacity: .45; }
+    .log-row.oldest { opacity: .18; }
+    .log-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--flourish-green); margin-top: 4px; flex-shrink: 0; }
+
+    .overlay {
+      display: none; position: fixed; inset: 0; z-index: 90;
+      flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(3,30,18,.93); text-align: center; padding: 32px;
+    }
+    .overlay.active { display: flex; }
+    .win-emoji { font-size: 4rem; margin-bottom: 8px; }
+    .win-title {
+      font-size: 2.2rem; font-weight: 800; color: var(--flourish-green);
+      text-transform: uppercase; letter-spacing: .1em; margin-bottom: 6px;
+    }
+    .win-sub { color: rgba(255,255,255,.7); font-size: .9rem; margin-bottom: 24px; }
+    .play-again-btn {
+      padding: 12px 36px; background: var(--flourish-green); color: #05472A;
+      border-radius: 99px; font-weight: 800; text-transform: uppercase;
+      border: none; box-shadow: 0 4px 0 #89b351; font-size: 1rem; cursor: pointer;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+    }
+    .play-again-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #89b351; }
+
+    .quiz-overlay {
+      display: none; position: fixed; inset: 0; z-index: 90;
+      flex-direction: column; align-items: center; justify-content: center;
+      background: rgba(3,30,18,.93); text-align: center; padding: 32px; gap: 14px;
+    }
+    .quiz-overlay.active { display: flex; }
+    .quiz-spinner {
+      width: 46px; height: 46px; border: 3px solid rgba(255,102,196,.25);
+      border-top-color: var(--flourish-pink); border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to{ transform: rotate(360deg); } }
+    .quiz-overlay-title {
+      font-size: 1.5rem; font-weight: 800; color: var(--flourish-pink);
+      text-transform: uppercase; letter-spacing: .1em;
+    }
+    .quiz-overlay-sub { color: rgba(255,255,255,.6); font-size: .85rem; max-width: 260px; line-height: 1.5; }
+    .cancel-quiz-btn {
+      padding: 9px 24px; background: rgba(255,255,255,.12); color: white;
+      border-radius: 99px; border: none; font-weight: 700; font-size: .8rem;
+      cursor: pointer; font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      margin-top: 6px;
+    }
+    .cancel-quiz-btn:active { opacity: .7; }
+  </style>
 </head>
-<body>
+<body onclick="initMusic()"> <audio id="bg-music" loop src="YOUR_MAIN_SONG_URL.mp3"></audio>
+  <audio id="quiz-music" loop src="YOUR_QUIZ_SONG_URL.mp3"></audio>
 
-    <img src="https://raw.githubusercontent.com/calebkatz874-bot/images/main/FLOURISH.png" alt="Flourish" class="logo-image">
+  <img src="https://raw.githubusercontent.com/calebkatz874-bot/images/main/FLOURISH.png"
+       alt="Flourish" class="logo-image">
 
-    <div id="dice-view">
-        <button class="switch-player-btn" onclick="togglePlayer()">Switch Player</button>
-        <div id="message-box" class="text-lg font-bold mb-2">P1's Turn</div>
+  <div class="progress-track" id="progress-track"></div>
 
-        <div class="scene" id="dice-scene">
-            <div id="dice" class="cube">
-                <div class="cube__face face-1"><span class="pip"></span></div>
-                <div class="cube__face face-2"><span class="pip"></span><span class="pip"></span></div>
-                <div class="cube__face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-                <div class="cube__face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-                <div class="cube__face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-                <div class="cube__face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-            </div>
-        </div>
+  <div class="players-row">
+    <div class="player-card active" id="card-p1">
+      <div class="player-card-name">Player 1</div>
+      <div class="player-card-spot" id="spot-p1">0</div>
+      <div class="player-card-label">spot / 20</div>
+    </div>
+    <div class="player-card" id="card-p2">
+      <div class="player-card-name">Player 2</div>
+      <div class="player-card-spot" id="spot-p2">0</div>
+      <div class="player-card-label">spot / 20</div>
+    </div>
+  </div>
 
-        <div class="pos-display">
-            <div class="adjust-btn" onclick="manualAdjust(-1)">−</div>
-            <div id="position-text" class="text-lg font-bold">Spot: 0</div>
-            <div class="adjust-btn" onclick="manualAdjust(1)">+</div>
-        </div>
-        <button class="reset-btn" onclick="resetFullGame()">Reset Game Board</button>
+  <div id="main-control-area">
+    <button class="switch-player-btn" id="switch-btn" onclick="togglePlayer()">Switch Player</button>
+
+    <div id="message-box">Player 1's Turn</div>
+    <div class="status-badge" id="status-badge">Ready to roll!</div>
+
+    <div class="scene" id="dice-scene">
+      <div id="dice" class="cube">
+        <div class="cube__face face-1"><span class="pip"></span></div>
+        <div class="cube__face face-2"><span class="pip"></span><span class="pip"></span></div>
+        <div class="cube__face face-3"><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+        <div class="cube__face face-4"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+        <div class="cube__face face-5"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+        <div class="cube__face face-6"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+      </div>
     </div>
 
-    <div id="quiz-view" class="hidden">
-        <div class="quiz-card">
-            <h1 class="text-flourish-green font-bold text-xl mb-4">QUIZ TIME!</h1>
-            <div id="question-text" class="text-white text-md mb-6 leading-tight">Loading...</div>
-            <div class="flex gap-4 justify-center">
-                <button class="btn-quiz" onclick="handleQuizAnswer(true)">TRUE</button>
-                <button class="btn-quiz" onclick="handleQuizAnswer(false)">FALSE</button>
-            </div>
-            <div id="quiz-feedback" class="mt-4 font-bold text-lg uppercase"></div>
-        </div>
-        <div class="verification">
-            <h2 class="text-flourish-green font-bold mb-1">Nutritional Science:</h2>
-            <div id="fact-source">Answer to see facts!</div>
-        </div>
+    <div class="pos-display">
+      <button class="adjust-btn" onclick="manualAdjust(-1)">−</button>
+      <div id="position-text" class="text-lg font-bold">Spot: 0</div>
+      <button class="adjust-btn" onclick="manualAdjust(1)">+</button>
     </div>
 
-    <script>
-        let currentPlayer = 1;
-        let positions = {
-            1: parseInt(localStorage.getItem('flourish_p1_pos')) || 0,
-            2: parseInt(localStorage.getItem('flourish_p2_pos')) || 0
-        };
-        const MAX_SPOTS = 20;
-        let isRolling = false;
+    <button class="reset-btn" onclick="confirmReset()">Reset Game Board</button>
+  </div>
 
-        const quizData = [
-            { q: "Fresh vegetables are always healthier than frozen.", a: false, fact: "Frozen veggies are flash-frozen at peak ripeness.", source: "Mayo Clinic" },
-            { q: "Drinking water helps boost metabolism.", a: true, fact: "Water increases calorie burn temporarily.", source: "Clinical Endocrinology" },
-            { q: "Brown sugar is healthier than white sugar.", a: false, fact: "Both are nearly identical nutritionally.", source: "AHA" },
-            { q: "Standard table salt and sea salt have the same sodium.", a: true, fact: "Both contain roughly 40% sodium by weight.", source: "AHA" }
-        ];
+  <div class="event-log" id="event-log">
+    <div class="log-row"><div class="log-dot"></div><span>Game ready — good luck!</span></div>
+  </div>
 
-        let activeQuestion = null;
+  <div class="challenge-overlay" id="challenge-overlay">
+    <div class="challenge-overlay-emoji">🧠</div>
+    <div class="challenge-overlay-title" id="challenge-overlay-title">Health Challenge!</div>
+    <div class="challenge-overlay-sub" id="challenge-overlay-sub">
+      Answer correctly to earn a <strong>bonus move</strong>!
+    </div>
+    <button class="challenge-go-btn" onclick="launchQuiz()">Open Challenge →</button>
+    <button class="challenge-skip-btn" onclick="skipChallenge()">Skip challenge</button>
+  </div>
 
-        function updateUI() {
-            document.getElementById('position-text').textContent = `Spot: ${positions[currentPlayer]}`;
-            document.getElementById('message-box').textContent = `Player ${currentPlayer}'s Turn`;
-            sendHoverlay(`active-player-${currentPlayer}`);
-            sendHoverlay(`spot-${positions[currentPlayer]}`);
-        }
+  <div class="overlay" id="win-overlay">
+    <div class="win-emoji">🏆</div>
+    <div class="win-title" id="win-title">Player 1 Wins!</div>
+    <div class="win-sub" id="win-sub">Reached Spot 20 — Flourish!</div>
+    <button class="play-again-btn" onclick="confirmReset()">Play Again</button>
+  </div>
 
-        function togglePlayer() {
-            if (isRolling) return;
-            currentPlayer = (currentPlayer === 1) ? 2 : 1;
-            updateUI();
-        }
+  <div class="quiz-overlay" id="quiz-overlay">
+    <div class="quiz-spinner"></div>
+    <div class="quiz-overlay-title">Challenge Active</div>
+    <div class="quiz-overlay-sub" id="quiz-overlay-sub">Waiting for player to answer…</div>
+    <button class="cancel-quiz-btn" onclick="cancelQuiz()">Cancel Challenge</button>
+  </div>
 
-        function sendHoverlay(msg) {
-            window.location.href = `space://do?action=send_event&event_message=${msg}`;
-        }
+<script>
+// ══════════════════════════════════════════════════
+//  AUDIO HELPERS
+// ══════════════════════════════════════════════════
+const audioBG = document.getElementById('bg-music');
+const audioQuiz = document.getElementById('quiz-music');
+let musicStarted = false;
 
-        function manualAdjust(amt) {
-            positions[currentPlayer] = Math.max(0, Math.min(MAX_SPOTS, positions[currentPlayer] + amt));
-            localStorage.setItem(`flourish_p${currentPlayer}_pos`, positions[currentPlayer]);
-            updateUI();
-        }
+function initMusic() {
+  if (!musicStarted) {
+    audioBG.play();
+    musicStarted = true;
+  }
+}
 
-        const faceRotations = { 1:{x:0, y:0}, 2:{x:0, y:-90}, 3:{x:0, y:-180}, 4:{x:0, y:90}, 5:{x:-90, y:0}, 6:{x:90, y:0} };
-        let currentX = 0, currentY = 0;
+function switchToQuizMusic() {
+  audioBG.pause();
+  audioQuiz.currentTime = 0;
+  audioQuiz.play();
+}
 
-        function rollDice() {
-            if (isRolling) return;
-            isRolling = true;
-            const result = Math.floor(Math.random() * 6) + 1;
-            
-            // Temporary landing calc
-            let tempPos = Math.min(MAX_SPOTS, positions[currentPlayer] + result);
-            
-            const spinsX = (Math.floor(Math.random() * 4) + 5) * 360;
-            const spinsY = (Math.floor(Math.random() * 4) + 5) * 360;
-            currentX += spinsX + faceRotations[result].x - (currentX % 360);
-            currentY += spinsY + faceRotations[result].y - (currentY % 360);
-            document.getElementById('dice').style.transform = `rotateX(${currentX}deg) rotateY(${currentY}deg)`;
+function switchToMainMusic() {
+  audioQuiz.pause();
+  audioBG.play();
+}
 
-            setTimeout(() => {
-                document.getElementById('message-box').textContent = `P${currentPlayer} rolled a ${result}!`;
-                positions[currentPlayer] = tempPos;
-                localStorage.setItem(`flourish_p${currentPlayer}_pos`, positions[currentPlayer]);
-                updateUI();
-                isRolling = false;
-                sendHoverlay(`dice-${result}`);
-                handleLanding(positions[currentPlayer]);
-            }, 1800);
-        }
+// ══════════════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════════════
+const CONFIG = {
+  WIN_SPOT:          20,
+  ANIMATION_DELAY: 4000,
+  FACT_DELAY:       10000,
+  DICE_ANIM_MS:    1800,
+  QUIZ_PAGE:       'flourish-quiz.html',
+};
 
-        function handleLanding(spot) {
-            let newPos = spot;
-            let eventMsg = "";
-            let isSpecial = true;
+const SPECIAL_SPOTS = {
+   1: { type: 'shortcut',  delta:  1,  label: '🥬 Radish Power! +1 Spot'    },
+   2: { type: 'fact',      label: '💡 FUN FACT: Dark Greens' },
+   3: { type: 'portal',    to:     7,  label: '🌀 Portal Jump to Spot 7!'   },
+   5: { type: 'trap',      delta: -1,  label: '🍟 Fry Grease! −1 Spot'      },
+   8: { type: 'fact',      label: '💡 FUN FACT: Dehydration' },
+  10: { type: 'challenge', bonus:   1, label: '⚡ Health Challenge! +1 Bonus' },
+  12: { type: 'shortcut',  delta:  3,  label: '🍇 Berry Boost! +3 Spots'    },
+  13: { type: 'fact',      label: '💡 FUN FACT: Whole Grains' },
+  15: { type: 'challenge', bonus:   2, label: '⚡ Health Challenge! +2 Bonus' },
+  16: { type: 'trap',      delta: -2,  label: '🍔 Burger Slump! −2 Spots'   },
+  19: { type: 'trap',      delta: -5,  label: '🍟 Fry Trap! −5 Spots'       },
+};
 
-            if (spot === 1) { newPos = 2; eventMsg = "+1 Bonus!"; }
-            else if (spot === 3) { newPos = 7; eventMsg = "🌀 Portal Jump!"; }
-            else if (spot === 5) { newPos = 4; eventMsg = "Fry Grease! -1"; }
-            else if (spot === 12) { newPos = 15; eventMsg = "+3 Bonus!"; }
-            else if (spot === 16) { newPos = 14; eventMsg = "Burger Slump! -2"; }
-            else if (spot === 19) { newPos = 14; eventMsg = "Fry Trap! -5"; }
-            else if (spot === 10 || spot === 15) { setTimeout(showQuiz, 1000); return; }
-            else { isSpecial = false; }
+const KEYS = {
+  P1:           'flourish_p1_pos',
+  P2:           'flourish_p2_pos',
+  PLAYER:       'flourish_current_player',
+  ROLLS:        'flourish_total_rolls',
+  QUIZ_CONTEXT: 'frd_quiz_context',
+  QUIZ_RESULT:  'frd_quiz_result',
+};
 
-            if (isSpecial) {
-                setTimeout(() => {
-                    document.getElementById('message-box').textContent = eventMsg;
-                    setTimeout(() => {
-                        positions[currentPlayer] = newPos;
-                        localStorage.setItem(`flourish_p${currentPlayer}_pos`, newPos);
-                        updateUI();
-                    }, 4000); 
-                }, 1000);
-            }
-        }
+const faceRotations = {
+  1: { x: 0,   y: 0   },
+  2: { x: 0,   y: -90 },
+  3: { x: 0,   y: -180},
+  4: { x: 0,   y: 90  },
+  5: { x: -90, y: 0   },
+  6: { x: 90,  y: 0   },
+};
 
-        function showQuiz() {
-            document.getElementById('dice-view').classList.add('hidden');
-            document.getElementById('quiz-view').classList.remove('hidden');
-            activeQuestion = quizData[Math.floor(Math.random() * quizData.length)];
-            document.getElementById('question-text').textContent = activeQuestion.q;
-            document.getElementById('quiz-feedback').textContent = "";
-        }
+// ══════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════
+let currentPlayer = parseInt(localStorage.getItem(KEYS.PLAYER)) || 1;
+let positions = {
+  1: parseInt(localStorage.getItem(KEYS.P1)) || 0,
+  2: parseInt(localStorage.getItem(KEYS.P2)) || 0,
+};
+let isRolling      = false;
+let waitingForQuiz = false;
+let showingFact    = false;
+let currentX = 0, currentY = 0;
+let logEntries = [];
+let totalRolls = parseInt(localStorage.getItem('flourish_total_rolls')) || 0;
 
-        function handleQuizAnswer(userChoice) {
-            const feedback = document.getElementById('quiz-feedback');
-            if (userChoice === activeQuestion.a) {
-                let moveBonus = (positions[currentPlayer] === 10) ? 1 : 2;
-                feedback.textContent = `✓ CORRECT! MOVE +${moveBonus}`;
-                feedback.style.color = "#C1FF72";
-                setTimeout(() => {
-                    positions[currentPlayer] += moveBonus;
-                    localStorage.setItem(`flourish_p${currentPlayer}_pos`, positions[currentPlayer]);
-                    exitQuiz();
-                }, 3000);
-            } else {
-                feedback.textContent = "✗ WRONG!";
-                feedback.style.color = "#FF0503";
-                setTimeout(exitQuiz, 3000);
-            }
-            document.getElementById('fact-source').innerHTML = `<strong>Fact:</strong> ${activeQuestion.fact}`;
-        }
+// ══════════════════════════════════════════════════
+//  HOVERLAY TRIGGER QUEUE
+// ══════════════════════════════════════════════════
+const HQ = {
+  queue: [], running: false,
+  MIN_GAP: 350,
+  add(trigger, delayAfter = 0) {
+    this.queue.push({ trigger, delayAfter });
+    if (!this.running) this._run();
+  },
+  async _run() {
+    this.running = true;
+    while (this.queue.length) {
+      const { trigger, delayAfter } = this.queue.shift();
+      this._fire(trigger);
+      await sleep(Math.max(this.MIN_GAP, delayAfter));
+    }
+    this.running = false;
+  },
+  _fire(trigger) {
+    try {
+      const f = document.createElement('iframe');
+      f.style.cssText = 'display:none;width:0;height:0;border:none;position:absolute;';
+      f.src = `space://do?action=send_event&event_message=${encodeURIComponent(trigger)}`;
+      document.body.appendChild(f);
+      setTimeout(() => { try { f.remove(); } catch(_){} }, 1000);
+    } catch(_) {}
+    try { window.parent.postMessage({ hoverlay: trigger, type: 'hoverlay-trigger' }, '*'); } catch(_) {}
+  },
+};
 
-        function exitQuiz() {
-            document.getElementById('quiz-view').classList.add('hidden');
-            document.getElementById('dice-view').classList.remove('hidden');
-            updateUI();
-        }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-        function resetFullGame() {
-            if (confirm("Reset Board?")) {
-                positions[1] = 0; positions[2] = 0;
-                localStorage.setItem('flourish_p1_pos', 0);
-                localStorage.setItem('flourish_p2_pos', 0);
-                updateUI();
-            }
-        }
+// ══════════════════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════════════════
+function addLog(msg, type) {
+  logEntries.unshift({ msg, type });
+  if (logEntries.length > 3) logEntries.pop();
+  const colors = { shortcut: '#C1FF72', trap: '#FF8080', portal: '#C89AFF', challenge: '#FF66C4', fact: '#00A3FF' };
+  document.getElementById('event-log').innerHTML = logEntries.map((e, i) => `
+    <div class="log-row ${i===1?'old':i===2?'oldest':''}">
+      <div class="log-dot" style="${colors[e.type]?`background:${colors[e.type]}`:''}"></div>
+      <span style="${colors[e.type]?`color:${colors[e.type]}`:''}">${e.msg}</span>
+    </div>`).join('');
+}
 
-        document.getElementById('dice-scene').addEventListener('click', rollDice);
-        updateUI();
-    </script>
+function setStatus(text, type = '') {
+  const b = document.getElementById('status-badge');
+  b.textContent = text;
+  b.className = `status-badge${type ? ' ' + type : ''}`;
+}
+
+function saveState() {
+  localStorage.setItem(KEYS.P1,     positions[1]);
+  localStorage.setItem(KEYS.P2,     positions[2]);
+  localStorage.setItem(KEYS.PLAYER, currentPlayer);
+}
+
+function updateProgressTrack() {
+  const track = document.getElementById('progress-track');
+  if (!track.children.length) {
+    for (let i = 0; i < CONFIG.WIN_SPOT; i++) {
+      const d = document.createElement('div'); d.className = 'progress-dot'; track.appendChild(d);
+    }
+  }
+  const dots = track.children;
+  const p1 = positions[1], p2 = positions[2];
+  for (let i = 0; i < CONFIG.WIN_SPOT; i++) {
+    const spot = i + 1;
+    dots[i].className = 'progress-dot';
+    if (spot <= p1 && spot <= p2) dots[i].classList.add(p1 >= p2 ? 'p1' : 'p2');
+    else if (spot <= p1) dots[i].classList.add('p1');
+    else if (spot <= p2) dots[i].classList.add('p2');
+  }
+}
+
+function updateUI() {
+  const p = currentPlayer;
+  document.getElementById('message-box').textContent = `Player ${p}'s Turn`;
+  document.getElementById('position-text').textContent = `Spot: ${positions[p]}`;
+  document.getElementById('spot-p1').textContent = positions[1];
+  document.getElementById('spot-p2').textContent = positions[2];
+  for (let i = 1; i <= 2; i++) {
+    document.getElementById(`card-p${i}`).classList.toggle('active', i === p);
+  }
+  const locked = isRolling || waitingForQuiz || showingFact;
+  document.getElementById('dice-scene').style.cursor = locked ? 'not-allowed' : 'pointer';
+  document.getElementById('switch-btn').disabled = locked;
+  updateProgressTrack();
+  saveState();
+}
+
+function rollDice() {
+  if (isRolling || waitingForQuiz || showingFact) return;
+  isRolling = true;
+  updateUI();
+  const maxRoll = totalRolls < 2 ? 4 : 6;
+  const result  = Math.floor(Math.random() * maxRoll) + 1;
+  totalRolls++;
+  localStorage.setItem('flourish_total_rolls', totalRolls);
+  const p = currentPlayer;
+  const spinsX = (Math.floor(Math.random() * 4) + 5) * 360;
+  const spinsY = (Math.floor(Math.random() * 4) + 5) * 360;
+  currentX += spinsX + faceRotations[result].x - (currentX % 360);
+  currentY += spinsY + faceRotations[result].y - (currentY % 360);
+  document.getElementById('dice').style.transform = `rotateX(${currentX}deg) rotateY(${currentY}deg)`;
+  HQ.add(`active-player-${p}`);
+  HQ.add(`dice-${result}`);
+  setTimeout(async () => {
+    const from   = positions[p];
+    const newPos = Math.min(CONFIG.WIN_SPOT, from + result);
+    positions[p] = newPos;
+    document.getElementById('message-box').textContent = `P${p} rolled a ${result}!`;
+    document.getElementById('position-text').textContent = `Spot: ${newPos}`;
+    addLog(`P${p} rolled ${result} → Spot ${newPos}`);
+    HQ.add(`spot-${newPos}`);
+    updateUI();
+    if (newPos >= CONFIG.WIN_SPOT) {
+      isRolling = false;
+      handleWin(p);
+      updateUI();
+      return;
+    }
+    await processSpecialSpot(p, newPos);
+    isRolling = false;
+    updateUI();
+  }, CONFIG.DICE_ANIM_MS);
+}
+
+async function processSpecialSpot(player, spot) {
+  const special = SPECIAL_SPOTS[spot];
+  if (!special) { setStatus('Ready to roll!'); return; }
+  if (special.type === 'fact') {
+    showingFact = true;
+    updateUI();
+    setStatus(special.label, 'fact');
+    addLog(special.label, 'fact');
+    document.getElementById('message-box').textContent = special.label;
+    HQ.add(`show-fact-${spot}`);
+    await sleep(CONFIG.FACT_DELAY);
+    HQ.add(`hide-fact-${spot}`);
+    showingFact = false;
+    setStatus('Ready to roll!');
+    document.getElementById('message-box').textContent = `Player ${player}'s Turn`;
+    updateUI();
+    return;
+  }
+  if (special.type === 'challenge') {
+    setStatus(special.label, 'challenge');
+    addLog(`P${player} hit a Challenge on Spot ${spot}!`, 'challenge');
+    HQ.add(`challenge-spot-${spot}`);
+    document.getElementById('challenge-overlay-title').textContent = `Spot ${spot} — Health Challenge!`;
+    document.getElementById('challenge-overlay-sub').innerHTML = `Answer correctly to earn <strong style="color:var(--flourish-green)">+${special.bonus} bonus move${special.bonus > 1 ? 's' : ''}</strong>!`;
+    document.getElementById('challenge-overlay').classList.add('active');
+    return;
+  }
+  const badgeType = special.type === 'trap' ? 'trap' : special.type === 'portal' ? 'portal' : 'shortcut';
+  setStatus(special.label, badgeType);
+  addLog(`Spot ${spot}: ${special.label}`, special.type);
+  document.getElementById('message-box').textContent = special.label;
+  HQ.add(`special-${special.type}-${spot}`);
+  await sleep(CONFIG.ANIMATION_DELAY);
+  const finalPos = special.type === 'portal' ? special.to : Math.max(1, Math.min(CONFIG.WIN_SPOT, spot + special.delta));
+  positions[player] = finalPos;
+  document.getElementById('position-text').textContent = `Spot: ${finalPos}`;
+  addLog(`→ P${player} now at Spot ${finalPos}`, special.type);
+  HQ.add(`spot-${finalPos}`);
+  updateUI();
+  if (finalPos >= CONFIG.WIN_SPOT) { handleWin(player); return; }
+  await processSpecialSpot(player, finalPos);
+}
+
+function launchQuiz() {
+  const p      = currentPlayer;
+  const spot   = positions[p];
+  const special = SPECIAL_SPOTS[spot];
+  if (!special || special.type !== 'challenge') return;
+  localStorage.setItem(KEYS.QUIZ_CONTEXT, JSON.stringify({ spot, player: p, bonus: special.bonus, timestamp: Date.now() }));
+  localStorage.removeItem(KEYS.QUIZ_RESULT);
+  window.open(CONFIG.QUIZ_PAGE, '_blank');
+  
+  // MUSIC SWAP HERE
+  switchToQuizMusic();
+
+  waitingForQuiz = true;
+  document.getElementById('quiz-overlay-sub').textContent = `Player ${p} is answering the Spot ${spot} challenge…`;
+  document.getElementById('challenge-overlay').classList.remove('active');
+  document.getElementById('quiz-overlay').classList.add('active');
+  HQ.add(`quiz-open-spot${spot}-p${p}`);
+  updateUI();
+}
+
+function skipChallenge() {
+  document.getElementById('challenge-overlay').classList.remove('active');
+  isRolling = false;
+  addLog('Challenge skipped');
+  setStatus('Challenge skipped');
+  updateUI();
+}
+
+function cancelQuiz() {
+  waitingForQuiz = false;
+  isRolling = false;
+  localStorage.removeItem(KEYS.QUIZ_CONTEXT);
+  localStorage.removeItem(KEYS.QUIZ_RESULT);
+  document.getElementById('quiz-overlay').classList.remove('active');
+  
+  // MUSIC SWAP BACK HERE
+  switchToMainMusic();
+  
+  addLog('Challenge cancelled');
+  setStatus('Challenge skipped');
+  updateUI();
+}
+
+window.addEventListener('storage', e => {
+  if (e.key === KEYS.QUIZ_RESULT && e.newValue) {
+    try {
+      const result = JSON.parse(e.newValue);
+      if (result && !result.applied) applyQuizResult(result);
+    } catch(err) { console.error('[Quiz result]', err); }
+  }
+});
+
+async function applyQuizResult(result) {
+  localStorage.setItem(KEYS.QUIZ_RESULT, JSON.stringify({ ...result, applied: true }));
+  waitingForQuiz = false;
+  document.getElementById('quiz-overlay').classList.remove('active');
+
+  // MUSIC SWAP BACK HERE
+  switchToMainMusic();
+
+  const p = result.player;
+  if (result.correct && result.bonus > 0) {
+    document.getElementById('message-box').textContent = `🎉 Correct! +${result.bonus} bonus!`;
+    addLog(`✓ P${p} correct! +${result.bonus} bonus move`, 'shortcut');
+    setStatus(`+${result.bonus} Bonus!`, 'shortcut');
+    HQ.add(`quiz-correct-spot${result.spot}`);
+    await sleep(700);
+    const newPos = Math.min(positions[p] + result.bonus, CONFIG.WIN_SPOT);
+    positions[p] = newPos;
+    HQ.add(`spot-${newPos}`);
+    addLog(`→ P${p} moved to Spot ${newPos}`, 'shortcut');
+    updateUI();
+    if (newPos >= CONFIG.WIN_SPOT) { isRolling = false; handleWin(p); return; }
+    await processSpecialSpot(p, newPos);
+  } else {
+    document.getElementById('message-box').textContent = `✗ Incorrect — no bonus`;
+    addLog(`✗ P${p} wrong answer — no bonus`);
+    setStatus('No bonus this round');
+    HQ.add(`quiz-wrong-spot${result.spot}`);
+  }
+  isRolling = false;
+  updateUI();
+}
+
+function togglePlayer() {
+  if (isRolling || waitingForQuiz || showingFact) return;
+  currentPlayer = currentPlayer === 1 ? 2 : 1;
+  document.getElementById('challenge-overlay').classList.remove('active');
+  HQ.add(`active-player-${currentPlayer}`);
+  addLog(`Turn passed to Player ${currentPlayer}`);
+  setStatus('Ready to roll!');
+  updateUI();
+}
+
+function manualAdjust(amt) {
+  if (isRolling || waitingForQuiz || showingFact) return;
+  positions[currentPlayer] = Math.max(0, Math.min(CONFIG.WIN_SPOT, positions[currentPlayer] + amt));
+  updateUI();
+  HQ.add(`spot-${positions[currentPlayer]}`);
+}
+
+function handleWin(player) {
+  document.getElementById('win-title').textContent = `Player ${player} Wins!`;
+  document.getElementById('win-sub').textContent   = `Reached Spot ${CONFIG.WIN_SPOT} — Flourish!`;
+  document.getElementById('win-overlay').classList.add('active');
+  HQ.add(`winner-player-${player}`);
+  addLog(`🏆 Player ${player} wins!`, 'shortcut');
+  setStatus('Winner!', 'win');
+}
+
+function confirmReset() {
+  if (!confirm('Reset BOTH players?')) return;
+  positions[1] = 0; positions[2] = 0;
+  currentPlayer = 1; isRolling = false; waitingForQuiz = false; showingFact = false;
+  totalRolls = 0;
+  logEntries = [];
+  [KEYS.P1, KEYS.P2, KEYS.PLAYER, KEYS.ROLLS, KEYS.QUIZ_CONTEXT, KEYS.QUIZ_RESULT]
+    .forEach(k => localStorage.removeItem(k));
+  document.getElementById('win-overlay').classList.remove('active');
+  document.getElementById('quiz-overlay').classList.remove('active');
+  document.getElementById('challenge-overlay').classList.remove('active');
+  document.getElementById('message-box').textContent = "Player 1's Turn";
+  document.getElementById('event-log').innerHTML = '<div class="log-row"><div class="log-dot"></div><span>Game reset — good luck!</span></div>';
+  setStatus('Ready to roll!');
+  HQ.add('game-reset');
+  HQ.add('active-player-1');
+  HQ.add('spot-0');
+  HQ.add('active-player-2');
+  HQ.add('spot-0');
+  HQ.add('active-player-1');
+  updateUI();
+}
+
+document.getElementById('dice-scene').addEventListener('click', rollDice);
+updateProgressTrack();
+updateUI();
+HQ.add(`active-player-${currentPlayer}`);
+if (positions[currentPlayer] > 0) HQ.add(`spot-${positions[currentPlayer]}`);
+setStatus('Ready to roll!');
+addLog(`Game loaded · Player ${currentPlayer}'s turn`);
+</script>
 </body>
 </html>
